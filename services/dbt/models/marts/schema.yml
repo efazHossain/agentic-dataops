@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fct_events_daily
+    description: "Daily event counts and revenue by device and event type."
+    columns:
+      - name: event_day
+        tests:
+          - not_null
+      - name: device_type
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+      - name: event_count
+        tests:
+          - not_null
+      - name: revenue
+        tests:
+          - not_null

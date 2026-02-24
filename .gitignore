@@ -1,0 +1,23 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Secrets
+.env
+*.env
+.env.*
+
+# Local Docker state (keep code, ignore volumes)
+pgdata/
+miniodata/
+
+# OS/IDE
+.DS_Store
+.vscode/
+.idea/

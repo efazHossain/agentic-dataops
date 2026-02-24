@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: raw_events
+        description: "Raw event stream loaded from MinIO JSONL"
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 2, period: day}
+        loaded_at_field: ingested_at
+        columns:
+          - name: event_id
+            tests:
+              - not_null
+              - unique
+          - name: event_ts
+            tests:
+              - not_null

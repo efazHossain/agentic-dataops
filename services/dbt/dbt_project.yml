@@ -1,0 +1,18 @@
+name: "agentic_dataops"
+version: "1.0.0"
+config-version: 2
+
+profile: "agentic_dataops"
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+models:
+  agentic_dataops:
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: mart
+      +materialized: table

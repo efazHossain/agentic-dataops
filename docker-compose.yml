@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: adops-postgres
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: adops-minio
+    env_file: .env
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: adops-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      for b in ${MINIO_BUCKETS}; do
+        mc mb -p local/$$b || true;
+      done &&
+      echo "MinIO buckets ensured."
+
+  generator:
+    build:
+      context: ./services/generator
+    container_name: adops-generator
+    env_file: .env
+    environment:
+      S3_ENDPOINT: http://minio:9000
+      GEN_BUCKET: lake-raw
+      GEN_PREFIX: events
+      GEN_N: "5000"
+    depends_on:
+      minio:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  loader:
+    build:
+      context: ./services/loader
+    container_name: adops-loader
+    env_file: .env
+    environment:
+      S3_ENDPOINT: http://minio:9000
+      PGHOST: postgres
+      PGPORT: "5432"
+      LOAD_BUCKET: lake-raw
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  agent:
+    build:
+      context: ./services/agent
+    container_name: adops-agent
+    env_file: .env
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      DBT_PROJECT_DIR: /workspace/services/dbt
+    volumes:
+      - ./:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  pgdata:
+  miniodata:

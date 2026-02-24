@@ -1,0 +1,12 @@
+agentic_dataops:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: agentic
+      password: agentic_pw
+      port: 5432
+      dbname: warehouse
+      schema: staging
+      threads: 4
