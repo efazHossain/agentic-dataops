@@ -1,6 +1,6 @@
 # Agentic DataOps (Local-First)
 
-> A local-first, agent-enabled data platform with automated freshness detection, ingestion, transformation, and remediation.
+> A local-first, production-style data platform with automated freshness monitoring and pipeline remediation.
 
 This project demonstrates how to build a reproducible data platform using object storage, a warehouse, dbt transformations, and an autonomous agent that monitors and repairs pipeline state.
 
@@ -209,3 +209,4 @@ This repository demonstrates:
 - Autonomous remediation patterns  
 
 It bridges data engineering fundamentals with agentic system behavior.
+
