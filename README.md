@@ -236,6 +236,18 @@ make ps
 make buckets
 ```
 
+## Validation Result
+
+The dbt transformation layer was successfully validated locally.
+
+```text
+Finished running 1 incremental model, 8 data tests, 1 view model in 5.51 seconds.
+
+Completed successfully
+
+PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10
+```
+
 ## Why This Project Matters
 
 This project demonstrates practical data engineering and analytics engineering skills, including:
