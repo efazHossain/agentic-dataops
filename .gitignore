@@ -10,10 +10,10 @@ logs/
 
 # Secrets
 .env
-*.env
 .env.*
+!.env.example
 
-# Local Docker state (keep code, ignore volumes)
+# Local Docker state
 pgdata/
 miniodata/
 
