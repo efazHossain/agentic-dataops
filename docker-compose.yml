@@ -43,11 +43,9 @@ services:
     env_file: .env
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
-      for b in ${MINIO_BUCKETS}; do
-        mc mb -p local/$$b || true;
-      done &&
-      echo "MinIO buckets ensured."
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
+      && for b in ${MINIO_BUCKETS}; do mc mb -p local/$$b || true; done
+      && echo "MinIO buckets ensured."
 
   generator:
     build:
