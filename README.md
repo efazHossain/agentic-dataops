@@ -2,11 +2,11 @@
 
 A local-first analytics engineering and DataOps platform that simulates an end-to-end event data pipeline using Docker, MinIO, PostgreSQL, dbt, and Python-based monitoring services.
 
-This project is designed to demonstrate practical data engineering skills across ingestion, object storage, warehouse loading, transformation, data quality checks, freshness monitoring, and operational remediation workflows.
+This project demonstrates practical data engineering skills across ingestion, object storage, warehouse loading, transformation, data quality checks, freshness monitoring, and operational remediation workflows.
 
 ## Project Overview
 
-Modern analytics systems need more than just data pipelines. They need reliable ingestion, tested transformations, monitoring, and clear operational workflows.
+Modern analytics systems need more than data movement. They need reliable ingestion, tested transformations, monitoring, and clear operational workflows.
 
 This project builds a local DataOps environment that:
 
@@ -109,7 +109,7 @@ cp .env.example .env
 make up
 ```
 
-This starts the core local infrastructure, including PostgreSQL and MinIO.
+This starts the local infrastructure, including PostgreSQL, MinIO, and the MinIO initialization service.
 
 ### 4. Check running containers
 
@@ -141,13 +141,30 @@ Run the local pipeline in this order:
 
 ```bash
 make up
+
 docker compose --profile tools run --rm generator
-docker compose --profile tools run --rm loader
+
+LOAD_DATE=$(date -u +%F)
+LOAD_KEY="events/dt=${LOAD_DATE}/events_${LOAD_DATE}.jsonl"
+
+docker compose --profile tools run --rm \
+  -e LOAD_KEY="$LOAD_KEY" \
+  loader
+
 cd services/dbt
 dbt build
 cd ../..
+
 docker compose --profile tools run --rm agent
 ```
+
+The loader requires a `LOAD_KEY` because the generated event file is stored in MinIO using a dated path such as:
+
+```text
+events/dt=2026-04-29/events_2026-04-29.jsonl
+```
+
+Using `date -u +%F` keeps the loader date aligned with the container-generated UTC date.
 
 ## dbt Transformation Layer
 
@@ -157,15 +174,28 @@ The dbt project is located in:
 services/dbt/
 ```
 
-The dbt layer is responsible for turning raw warehouse tables into analytics-ready models.
-
-Expected modeling layers include:
+The dbt layer turns raw warehouse tables into analytics-ready models.
 
 | Layer | Purpose |
 |---|---|
-| Staging | Clean and standardize raw event data |
-| Marts | Build reporting-ready fact and dimension models |
-| Tests | Validate uniqueness, nulls, accepted values, and relationships |
+| Source | Defines raw warehouse tables |
+| Staging | Cleans and standardizes raw event data |
+| Mart | Builds reporting-ready fact tables |
+| Tests | Validates uniqueness, nulls, accepted values, and relationships |
+
+## Validation Result
+
+The dbt transformation layer was successfully validated locally.
+
+```text
+Finished running 1 incremental model, 8 data tests, 1 view model in 5.51 seconds.
+
+Completed successfully
+
+PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10
+```
+
+This confirms that the pipeline can build the staging view, incremental mart model, and dbt data tests successfully.
 
 ## Agent Monitoring Layer
 
@@ -236,16 +266,12 @@ make ps
 make buckets
 ```
 
-## Validation Result
+Run dbt validation:
 
-The dbt transformation layer was successfully validated locally.
-
-```text
-Finished running 1 incremental model, 8 data tests, 1 view model in 5.51 seconds.
-
-Completed successfully
-
-PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10
+```bash
+cd services/dbt
+dbt build
+cd ../..
 ```
 
 ## Why This Project Matters
