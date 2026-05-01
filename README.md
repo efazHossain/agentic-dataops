@@ -182,6 +182,10 @@ make dbt-run     # Run dbt transformations
 make dbt-test    # Run dbt tests
 make agent       # Run freshness remediation agent
 make test        # Run Python unit tests
+make report      # Generate SVG report assets
+make dashboard   # Start the Streamlit dashboard
+make dbt-docs-generate
+make dbt-docs-serve
 make psql        # Open psql in the Postgres container
 make buckets     # List MinIO buckets
 make reset       # Stop services and remove Docker volumes
@@ -239,10 +243,10 @@ The project also includes dbt source freshness checks and dbt model tests for co
 - **Incremental mart**: daily event metrics use an incremental strategy keyed by day, device, and event type.
 - **Agentic remediation**: the agent turns freshness failures into a concrete remediation workflow instead of only alerting.
 
-## Current Roadmap
+## Future Extensions
 
-- Expand CI from configuration checks to a full Docker integration demo
-- Add Python unit tests for generator and loader behavior
-- Add a small dashboard or generated report from the mart table
-- Add richer data quality checks for volume anomalies and revenue drift
-- Add Dagster orchestration once the core workflow is fully validated
+- Add volume anomaly and revenue-drift checks on top of the mart model.
+- Add Dagster orchestration for scheduled generation, loading, dbt runs, and remediation.
+- Add alert delivery simulation for failed freshness or data quality checks.
+- Add a full Docker integration workflow in CI for the end-to-end demo path.
+- Add more realistic event schemas, late-arriving data, and multi-partition loading.
