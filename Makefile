@@ -10,6 +10,13 @@ help:
 	@echo "  make psql     - Open psql shell into Postgres container"
 	@echo "  make minio    - Print MinIO console URL"
 	@echo "  make buckets  - List MinIO buckets"
+	@echo "  make generate - Generate one event partition in MinIO"
+	@echo "  make load     - Load the latest generated partition into Postgres"
+	@echo "  make dbt-run  - Run dbt models"
+	@echo "  make dbt-test - Run dbt tests"
+	@echo "  make agent    - Run freshness remediation agent"
+	@echo "  make demo     - Run the local demo path"
+	@echo "  make validate - Validate compose and dbt project configuration"
 	@echo "  make reset    - Remove volumes and start fresh"
 
 up:
@@ -25,18 +32,40 @@ logs:
 	docker compose logs -f --tail=200
 
 psql:
-	docker exec -it adops-postgres psql -U $$POSTGRES_USER -d $$POSTGRES_DB
+	docker exec -it adops-postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
 minio:
-	@echo "MinIO API: http://localhost:$$MINIO_PORT"
-	@echo "MinIO Console: http://localhost:$$MINIO_CONSOLE_PORT"
+	@echo "MinIO API: http://localhost:$${MINIO_PORT:-9000}"
+	@echo "MinIO Console: http://localhost:$${MINIO_CONSOLE_PORT:-9001}"
 
 buckets:
-	docker run --rm --network agentic-dataops_default \
-		--entrypoint /bin/sh \
-		-e MINIO_ROOT_USER -e MINIO_ROOT_PASSWORD \
-		minio/mc:latest -c \
+	docker compose run --rm --entrypoint /bin/sh minio-init -c \
 		'mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null && mc ls local'
+
+generate:
+	docker compose --profile tools run --rm generator
+
+load:
+	@key=$$(docker compose run --rm --entrypoint /bin/sh minio-init -c 'mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null && mc find local/lake-raw/events --name "*.jsonl" --maxdepth 6 | sort | tail -n 1 | sed "s#local/lake-raw/##"'); \
+	if [ -z "$$key" ]; then echo "No event files found. Run make generate first."; exit 1; fi; \
+	echo "Loading $$key"; \
+	docker compose --profile tools run --rm -e LOAD_KEY="$$key" loader
+
+dbt-run:
+	docker compose --profile tools run --rm dbt dbt run
+
+dbt-test:
+	docker compose --profile tools run --rm dbt dbt test
+
+agent:
+	docker compose --profile tools run --rm agent
+
+demo: up generate load dbt-run dbt-test
+	@echo "Demo complete. Run 'make agent' to exercise freshness remediation."
+
+validate:
+	docker compose config >/dev/null
+	docker compose --profile tools run --rm dbt dbt parse
 
 reset:
 	docker compose down -v

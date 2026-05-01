@@ -1,0 +1,38 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  project-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python tooling
+        run: pip install -r requirements.txt
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose config
+        run: docker compose --profile tools config >/dev/null
+
+      - name: Parse dbt project
+        run: dbt parse --project-dir services/dbt --profiles-dir services/dbt
+
+      - name: Compile Python services
+        run: |
+          python -m py_compile \
+            services/agent/src/agent_run.py \
+            services/loader/src/load_events.py \
+            services/generator/src/generate_events.py \
+            services/generator/src/write_to_minio.py

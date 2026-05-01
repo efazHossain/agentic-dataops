@@ -1,12 +1,16 @@
 import os
 import re
 import subprocess
+import sys
+import uuid
 from datetime import datetime, timezone
 
 import psycopg2
 
 REPO_ROOT = os.getenv("REPO_ROOT", "/workspace")
 DBT_DIR = os.getenv("DBT_PROJECT_DIR", "/workspace/services/dbt")
+GENERATOR_DIR = os.path.join(REPO_ROOT, "services", "generator")
+LOADER_DIR = os.path.join(REPO_ROOT, "services", "loader")
 
 def run(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
     p = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -20,12 +24,17 @@ def pg_conn():
     pw = os.getenv("POSTGRES_PASSWORD", "agentic_pw")
     return psycopg2.connect(host=host, port=port, dbname=db, user=user, password=pw)
 
-def log_run(status: str, details: str):
+def log_run(run_id: str, status: str, details: str):
     with pg_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO ops.pipeline_runs (pipeline_name, status, details) VALUES (%s, %s, %s)",
-                ("freshness_agent", status, details[:8000]),
+                """
+                INSERT INTO ops.pipeline_runs (
+                    run_id, pipeline_name, status, started_at, ended_at, details
+                )
+                VALUES (%s, %s, %s, NOW(), NOW(), %s)
+                """,
+                (run_id, "freshness_agent", status, details[:8000]),
             )
         conn.commit()
 
@@ -55,14 +64,20 @@ def minio_latest_key(prefix: str = "events/") -> str:
     return m.group(1)
 
 def run_loader(load_key: str) -> tuple[int, str]:
-    # Runs loader container from the repo root (compose project)
-    return run(
-        ["docker", "compose", "--profile", "tools", "run", "--rm", "-e", f"LOAD_KEY={load_key}", "loader"],
-        cwd=REPO_ROOT,
+    env = os.environ.copy()
+    env["LOAD_KEY"] = load_key
+    p = subprocess.run(
+        [sys.executable, "-m", "src.load_events"],
+        cwd=LOADER_DIR,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
     )
+    return p.returncode, p.stdout
 
 def run_generator() -> tuple[int, str]:
-    return run(["docker", "compose", "--profile", "tools", "run", "--rm", "generator"], cwd=REPO_ROOT)
+    return run([sys.executable, "-m", "src.generate_events"], cwd=GENERATOR_DIR)
 
 def run_dbt() -> tuple[int, str, int, str]:
     r_code, r_out = run(["dbt", "run"], cwd=DBT_DIR)
@@ -73,19 +88,20 @@ def run_freshness() -> tuple[int, str]:
     return run(["dbt", "source", "freshness"], cwd=DBT_DIR)
 
 def main():
+    run_id = f"freshness-agent-{uuid.uuid4()}"
     started = datetime.now(timezone.utc).isoformat()
 
     f_code, f_out = run_freshness()
     if f_code == 0:
         msg = f"[{started}] freshness OK\n{f_out}"
-        log_run("success", msg)
+        log_run(run_id, "SUCCESS", msg)
         print(msg)
         return
 
     stale = bool(re.search(r"ERROR\s+STALE|STALE freshness", f_out))
     if not stale:
         msg = f"[{started}] freshness failed (non-stale)\n{f_out}"
-        log_run("error", msg)
+        log_run(run_id, "FAILED", msg)
         print(msg)
         raise SystemExit(f_code)
 
@@ -119,7 +135,7 @@ def main():
     )
 
     ok = (g_code == 0 and l_code == 0 and r_code == 0 and t_code == 0 and f2_code == 0)
-    log_run("success" if ok else "error", blob)
+    log_run(run_id, "SUCCESS" if ok else "FAILED", blob)
     print(blob)
 
 if __name__ == "__main__":

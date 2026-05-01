@@ -1,38 +1,18 @@
 # Agentic DataOps Platform
 
-A local-first analytics engineering and DataOps platform that simulates an end-to-end event data pipeline using Docker, MinIO, PostgreSQL, dbt, and Python-based monitoring services.
+Local-first data platform that simulates a production analytics pipeline with object storage, a warehouse, dbt transformations, data freshness checks, and an automated remediation agent.
 
-This project demonstrates practical data engineering skills across ingestion, object storage, warehouse loading, transformation, data quality checks, freshness monitoring, and operational remediation workflows.
+This project is designed as a portfolio-grade data engineering demo: it shows how raw event data moves through lake storage, ingestion, transformation, validation, and operational telemetry using Docker Compose.
 
-## Project Overview
+## What This Demonstrates
 
-Modern analytics systems need more than data movement. They need reliable ingestion, tested transformations, monitoring, and clear operational workflows.
-
-This project builds a local DataOps environment that:
-
-- Generates synthetic event data
-- Stores raw files in MinIO object storage
-- Loads event data into PostgreSQL
-- Transforms warehouse tables using dbt
-- Runs data quality and freshness checks
-- Uses a Python agent service to monitor pipeline health and log remediation activity
-- Provides reproducible local development through Docker Compose and Makefile commands
-
-The goal is to simulate how a small production-style analytics platform could be structured for local development, testing, and portfolio demonstration.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Event Generator] --> B[MinIO Raw Lake]
-    B --> C[Loader Service]
-    C --> D[PostgreSQL Warehouse]
-    D --> E[dbt Staging Models]
-    E --> F[dbt Mart Models]
-    F --> G[dbt Tests + Data Quality Checks]
-    G --> H[Agent Monitor]
-    H --> I[Freshness Checks + Remediation Logs]
-```
+- End-to-end data pipeline design with MinIO, Postgres, Python, and dbt
+- Local S3-compatible object storage and warehouse separation
+- Incremental analytics modeling with dbt
+- Source freshness checks and dbt data tests
+- Automated remediation when a pipeline becomes stale
+- Operational logging into an `ops` schema
+- A reproducible developer workflow through Docker Compose and Make
 
 ## Tech Stack
 
@@ -43,256 +23,167 @@ flowchart LR
 | Object Storage | MinIO |
 | Warehouse | PostgreSQL |
 | Transformation | dbt |
-| Monitoring | Python agent service |
-| Data Quality | dbt tests, freshness checks |
-| DevOps | Makefile, environment configuration |
+| Monitoring | Python freshness agent |
+| Data Quality | dbt tests, dbt source freshness |
+| DevOps | Makefile, GitHub Actions |
 
-## Core Features
+## Architecture
 
-| Feature | Description |
-|---|---|
-| Synthetic event generation | Creates sample event data for pipeline testing |
-| Object storage layer | Stores raw generated data in MinIO buckets |
-| Warehouse loading | Loads raw event data into PostgreSQL |
-| dbt transformations | Builds staging and mart models for analytics-ready tables |
-| Data quality checks | Uses dbt tests to validate transformed data |
-| Freshness monitoring | Detects stale or missing pipeline outputs |
-| Agent-based remediation | Logs operational status and supports automated recovery patterns |
-| Local reproducibility | Runs through Docker Compose and Makefile commands |
+```mermaid
+flowchart TD
+    generator["Event Generator"]
+    minio["MinIO lake-raw bucket"]
+    loader["Loader service"]
+    raw["Postgres raw.raw_events"]
+    stg["dbt staging model stg_events"]
+    mart["dbt mart fct_events_daily"]
+    agent["Freshness Agent"]
+    ops["ops.pipeline_runs telemetry"]
+
+    generator --> minio
+    minio --> loader
+    loader --> raw
+    raw --> stg
+    stg --> mart
+    agent --> generator
+    agent --> loader
+    agent --> stg
+    agent --> ops
+```
+
+## Components
+
+- **MinIO**: local S3-compatible object storage for generated JSONL event partitions
+- **Postgres**: warehouse with `raw`, `staging`, `mart`, and `ops` schemas
+- **dbt**: staging, mart, tests, freshness checks, and docs
+- **Python generator**: writes synthetic event partitions to MinIO
+- **Python loader**: reads the latest JSONL partition and upserts events into Postgres
+- **Freshness agent**: runs dbt freshness checks, remediates stale data, and logs outcomes
+- **Makefile**: short commands for the happy path demo
 
 ## Project Structure
 
 ```text
-agentic-dataops/
-│
-├── data/
-│   └── sample/
-│
-├── docs/
-│   └── runbook.md
-│
-├── infra/
-│   ├── minio/
-│   └── postgres/
-│
-├── services/
-│   ├── agent/
-│   ├── dbt/
-│   ├── generator/
-│   └── loader/
-│
-├── docker-compose.yml
-├── Makefile
-├── requirements.txt
-├── .env.example
-└── README.md
+infra/
+  postgres/init/        Postgres schemas and warehouse tables
+  minio/init/           MinIO bucket helper script
+services/
+  generator/            Synthetic event generation
+  loader/               JSONL ingestion into Postgres
+  dbt/                  dbt project, models, tests, and profile
+  agent/                Freshness detection and remediation workflow
+data/sample/            Notes for sample data usage
+docs/demo-proof.md      Verified remediation run output
+docker-compose.yml      Local infrastructure and tool services
+Makefile                Developer workflow shortcuts
 ```
 
 ## Quickstart
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/efazHossain/agentic-dataops.git
-cd agentic-dataops
-```
-
-### 2. Create an environment file
+### 1. Configure Environment
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Start core services
+### 2. Run the Demo Path
 
 ```bash
-make up
+make demo
 ```
 
-This starts the local infrastructure, including PostgreSQL, MinIO, and the MinIO initialization service.
+This starts the core services, generates one event partition, loads it into Postgres, runs dbt models, and runs dbt tests.
 
-### 4. Check running containers
+### 3. Exercise the Agent
 
 ```bash
-make ps
+make agent
 ```
 
-### 5. View logs
+The agent runs `dbt source freshness`. If the source is stale, it generates a new partition, finds the latest object in MinIO, loads it into Postgres, runs dbt models and tests, checks freshness again, and logs the result.
+
+### Demo Proof
+
+A verified agent run is captured in [docs/demo-proof.md](docs/demo-proof.md). In that run, the agent detected stale freshness, generated and loaded `5000` events, rebuilt dbt models, passed all `8` dbt tests, and confirmed freshness passed afterward.
+
+### 4. Validate Configuration
 
 ```bash
-make logs
+make validate
 ```
 
-### 6. Open PostgreSQL
+This checks the Docker Compose configuration and runs `dbt parse` in the dbt container.
+
+## Useful Commands
 
 ```bash
-make psql
+make up          # Start Postgres, MinIO, and bucket initialization
+make generate    # Generate a JSONL event partition in MinIO
+make load        # Load the latest generated partition into raw.raw_events
+make dbt-run     # Run dbt transformations
+make dbt-test    # Run dbt tests
+make agent       # Run freshness remediation agent
+make psql        # Open psql in the Postgres container
+make buckets     # List MinIO buckets
+make reset       # Stop services and remove Docker volumes
 ```
 
-### 7. View MinIO connection info
+## Data Model
 
-```bash
-make minio
+### `raw.raw_events`
+
+Raw event stream loaded from MinIO JSONL files. Important fields include:
+
+- `event_id`
+- `user_id`
+- `event_type`
+- `event_ts`
+- `device_type`
+- `price`
+- `currency`
+- `source_version`
+- `geo_country`
+- `campaign_id`
+- `ingested_at`
+
+### `stg_events`
+
+Typed and normalized staging model over the raw event stream.
+
+### `fct_events_daily`
+
+Incremental mart model aggregating event counts and purchase revenue by:
+
+- `event_day`
+- `device_type`
+- `event_type`
+
+## Observability
+
+The platform records operational outcomes in `ops.pipeline_runs`.
+
+Example query:
+
+```sql
+SELECT run_id, pipeline_name, status, started_at, ended_at
+FROM ops.pipeline_runs
+ORDER BY started_at DESC;
 ```
 
-## Typical Workflow
+The project also includes dbt source freshness checks and dbt model tests for core integrity checks.
 
-Run the local pipeline in this order:
+## Design Decisions
 
-```bash
-make up
+- **Local-first**: every core component runs through Docker Compose for reproducibility.
+- **Warehouse/lake separation**: generated events land in MinIO before being loaded into Postgres.
+- **dbt-centered modeling**: transformations, tests, freshness, and docs live in one analytics project.
+- **Incremental mart**: daily event metrics use an incremental strategy keyed by day, device, and event type.
+- **Agentic remediation**: the agent turns freshness failures into a concrete remediation workflow instead of only alerting.
 
-docker compose --profile tools run --rm generator
+## Current Roadmap
 
-LOAD_DATE=$(date -u +%F)
-LOAD_KEY="events/dt=${LOAD_DATE}/events_${LOAD_DATE}.jsonl"
-
-docker compose --profile tools run --rm \
-  -e LOAD_KEY="$LOAD_KEY" \
-  loader
-
-cd services/dbt
-dbt build
-cd ../..
-
-docker compose --profile tools run --rm agent
-```
-
-The loader requires a `LOAD_KEY` because the generated event file is stored in MinIO using a dated path such as:
-
-```text
-events/dt=2026-04-29/events_2026-04-29.jsonl
-```
-
-Using `date -u +%F` keeps the loader date aligned with the container-generated UTC date.
-
-## dbt Transformation Layer
-
-The dbt project is located in:
-
-```text
-services/dbt/
-```
-
-The dbt layer turns raw warehouse tables into analytics-ready models.
-
-| Layer | Purpose |
-|---|---|
-| Source | Defines raw warehouse tables |
-| Staging | Cleans and standardizes raw event data |
-| Mart | Builds reporting-ready fact tables |
-| Tests | Validates uniqueness, nulls, accepted values, and relationships |
-
-## Validation Result
-
-The dbt transformation layer was successfully validated locally.
-
-```text
-Finished running 1 incremental model, 8 data tests, 1 view model in 5.51 seconds.
-
-Completed successfully
-
-PASS=10 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=10
-```
-
-This confirms that the pipeline can build the staging view, incremental mart model, and dbt data tests successfully.
-
-## Agent Monitoring Layer
-
-The agent service monitors pipeline health and operational metadata.
-
-The agent is designed to support:
-
-- Freshness checks
-- dbt status inspection
-- Stale pipeline detection
-- Remediation logging
-- Operational observability
-
-This gives the project a stronger DataOps focus beyond a basic ETL pipeline.
-
-## Runbook
-
-Operational instructions are documented in:
-
-```text
-docs/runbook.md
-```
-
-The runbook covers:
-
-- Starting services
-- Checking containers
-- Generating event data
-- Loading events into PostgreSQL
-- Running dbt models
-- Running the agent
-- Common troubleshooting steps
-
-## Environment Variables
-
-A sample environment file is provided in:
-
-```text
-.env.example
-```
-
-Example variables include:
-
-```text
-POSTGRES_USER=agentic
-POSTGRES_PASSWORD=agentic_pw
-POSTGRES_DB=warehouse
-POSTGRES_PORT=5432
-
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin123
-MINIO_PORT=9000
-MINIO_CONSOLE_PORT=9001
-MINIO_BUCKETS="lake-raw lake-logs lake-artifacts"
-```
-
-Do not commit your real `.env` file.
-
-## Validation Commands
-
-Use these commands to validate the local setup:
-
-```bash
-docker compose config
-make help
-make up
-make ps
-make buckets
-```
-
-Run dbt validation:
-
-```bash
-cd services/dbt
-dbt build
-cd ../..
-```
-
-## Why This Project Matters
-
-This project demonstrates practical data engineering and analytics engineering skills, including:
-
-- Building containerized data infrastructure
-- Designing object storage and warehouse layers
-- Writing SQL transformations with dbt
-- Implementing data quality checks
-- Creating reproducible local workflows
-- Thinking operationally about freshness, failures, and remediation
-
-It is intended to show not just that data can be moved, but that pipelines can be monitored, tested, and maintained.
-
-## Future Improvements
-
-- Add GitHub Actions for dbt validation
-- Add Great Expectations checks for raw data validation
-- Add Dagster or Airflow orchestration
-- Add a lightweight dashboard for pipeline health metrics
-- Add lineage documentation for dbt models
-- Add alerting simulation for freshness failures
-- Add more realistic event schemas and partitioned data layouts
+- Expand CI from configuration checks to a full Docker integration demo
+- Add Python unit tests for generator and loader behavior
+- Add a small dashboard or generated report from the mart table
+- Add richer data quality checks for volume anomalies and revenue drift
+- Add Dagster orchestration once the core workflow is fully validated

@@ -42,10 +42,11 @@ services:
         condition: service_healthy
     env_file: .env
     entrypoint: ["/bin/sh", "-c"]
-    command: >
-      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-      && for b in ${MINIO_BUCKETS}; do mc mb -p local/$$b || true; done
-      && echo "MinIO buckets ensured."
+    command:
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" \
+        && for b in $$MINIO_BUCKETS; do mc mb -p local/$$b || true; done \
+        && echo "MinIO buckets ensured."
 
   generator:
     build:
@@ -81,6 +82,23 @@ services:
     profiles:
       - tools
 
+  dbt:
+    build:
+      context: ./services/dbt
+    container_name: adops-dbt
+    env_file: .env
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      DBT_PROFILES_DIR: /workspace/services/dbt
+    volumes:
+      - ./:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
   agent:
     build:
       context: ./services/agent
@@ -90,9 +108,9 @@ services:
       PGHOST: postgres
       PGPORT: "5432"
       DBT_PROJECT_DIR: /workspace/services/dbt
+      DBT_PROFILES_DIR: /workspace/services/dbt
     volumes:
       - ./:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy

@@ -3,7 +3,7 @@ agentic_dataops:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('PGHOST', 'localhost') }}"
+      host: "{{ env_var('PGHOST', 'postgres') }}"
       user: "{{ env_var('POSTGRES_USER', 'agentic') }}"
       password: "{{ env_var('POSTGRES_PASSWORD', 'agentic_pw') }}"
       port: "{{ env_var('PGPORT', '5432') | int }}"

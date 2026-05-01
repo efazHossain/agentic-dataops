@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS ops.pipeline_runs (
   status        TEXT NOT NULL CHECK (status IN ('SUCCESS','FAILED','RUNNING','DEGRADED')),
   started_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ended_at      TIMESTAMPTZ,
-  error_message TEXT
+  details       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ops.dq_results (
