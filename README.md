@@ -25,6 +25,7 @@ This project is designed as a portfolio-grade data engineering demo: it shows ho
 | Transformation | dbt |
 | Monitoring | Python freshness agent |
 | Data Quality | dbt tests, dbt source freshness |
+| Dashboarding | Streamlit, generated SVG report assets |
 | DevOps | Makefile, GitHub Actions |
 
 ## Architecture
@@ -59,6 +60,7 @@ flowchart TD
 - **Python generator**: writes synthetic event partitions to MinIO
 - **Python loader**: reads the latest JSONL partition and upserts events into Postgres
 - **Freshness agent**: runs dbt freshness checks, remediates stale data, and logs outcomes
+- **Streamlit dashboard**: visualizes event funnel, revenue, daily volume, mart rows, and agent telemetry
 - **Makefile**: short commands for the happy path demo
 
 ## Project Structure
@@ -71,11 +73,16 @@ services/
   generator/            Synthetic event generation
   loader/               JSONL ingestion into Postgres
   dbt/                  dbt project, models, tests, and profile
+  dashboard/            Streamlit dashboard over warehouse outputs
   agent/                Freshness detection and remediation workflow
 data/sample/            Notes for sample data usage
 docs/demo-proof.md      Verified remediation run output
 docs/sample-analytics-report.md
                         Example warehouse metrics and SQL
+docs/dbt-docs.md        dbt docs and lineage instructions
+docs/assets/            Generated SVG report charts
+scripts/generate_report.py
+                        Generates report assets from local warehouse data
 docker-compose.yml      Local infrastructure and tool services
 Makefile                Developer workflow shortcuts
 ```
@@ -111,6 +118,37 @@ A verified agent run is captured in [docs/demo-proof.md](docs/demo-proof.md). In
 ### Sample Analytics Output
 
 Example warehouse metrics are captured in [docs/sample-analytics-report.md](docs/sample-analytics-report.md), including total events loaded, purchase revenue, device performance, latest mart rows, and the SQL used to produce the report.
+
+Generate fresh SVG report assets from the local warehouse:
+
+```bash
+make report
+```
+
+### Dashboard
+
+Start the Streamlit dashboard:
+
+```bash
+make dashboard
+```
+
+Open:
+
+```text
+http://localhost:8501
+```
+
+### dbt Docs
+
+Generate and serve dbt documentation:
+
+```bash
+make dbt-docs-generate
+make dbt-docs-serve
+```
+
+More detail is available in [docs/dbt-docs.md](docs/dbt-docs.md).
 
 ### 4. Validate Configuration
 

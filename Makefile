@@ -15,6 +15,10 @@ help:
 	@echo "  make dbt-run  - Run dbt models"
 	@echo "  make dbt-test - Run dbt tests"
 	@echo "  make agent    - Run freshness remediation agent"
+	@echo "  make report   - Generate SVG report assets from warehouse data"
+	@echo "  make dashboard - Start the Streamlit dashboard"
+	@echo "  make dbt-docs-generate - Generate dbt documentation"
+	@echo "  make dbt-docs-serve - Serve dbt documentation on localhost:8085"
 	@echo "  make demo     - Run the local demo path"
 	@echo "  make validate - Validate compose and dbt project configuration"
 	@echo "  make reset    - Remove volumes and start fresh"
@@ -59,6 +63,18 @@ dbt-test:
 
 agent:
 	docker compose --profile tools run --rm agent
+
+report:
+	python3 scripts/generate_report.py
+
+dashboard:
+	docker compose --profile dashboard up --build dashboard
+
+dbt-docs-generate:
+	docker compose --profile tools run --rm dbt dbt docs generate
+
+dbt-docs-serve:
+	docker compose --profile tools run --rm -p 8085:8085 dbt dbt docs serve --host 0.0.0.0 --port 8085
 
 demo: up generate load dbt-run dbt-test
 	@echo "Demo complete. Run 'make agent' to exercise freshness remediation."

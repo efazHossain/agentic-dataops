@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="420" viewBox="0 0 820 420">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="28.0" y="36.0" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="start" fill="#172033">Daily Event Volume</text>
+<line x1="92" y1="332" x2="784" y2="332" stroke="#cad2df" stroke-width="1"/>
+<line x1="92" y1="72" x2="92" y2="332" stroke="#cad2df" stroke-width="1"/>
+<line x1="92" y1="332.0" x2="784" y2="332.0" stroke="#edf1f7" stroke-width="1"/>
+<text x="80.0" y="337.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#172033">0</text>
+<line x1="92" y1="267.0" x2="784" y2="267.0" stroke="#edf1f7" stroke-width="1"/>
+<text x="80.0" y="272.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#172033">1,250</text>
+<line x1="92" y1="202.0" x2="784" y2="202.0" stroke="#edf1f7" stroke-width="1"/>
+<text x="80.0" y="207.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#172033">2,500</text>
+<line x1="92" y1="137.0" x2="784" y2="137.0" stroke="#edf1f7" stroke-width="1"/>
+<text x="80.0" y="142.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#172033">3,750</text>
+<line x1="92" y1="72.0" x2="784" y2="72.0" stroke="#edf1f7" stroke-width="1"/>
+<text x="80.0" y="77.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="end" fill="#172033">5,000</text>
+<polyline points="92.0,72.0 322.7,72.0 553.3,72.0 784.0,72.0" fill="none" stroke="#2f80ed" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="92.0" cy="72.0" r="5" fill="#ffffff" stroke="#2f80ed" stroke-width="3"/>
+<text x="92.0" y="360.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#172033">2026-01-27</text>
+<circle cx="322.7" cy="72.0" r="5" fill="#ffffff" stroke="#2f80ed" stroke-width="3"/>
+<text x="322.7" y="360.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#172033">2026-01-31</text>
+<circle cx="553.3" cy="72.0" r="5" fill="#ffffff" stroke="#2f80ed" stroke-width="3"/>
+<text x="553.3" y="360.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#172033">2026-04-29</text>
+<circle cx="784.0" cy="72.0" r="5" fill="#ffffff" stroke="#2f80ed" stroke-width="3"/>
+<text x="784.0" y="360.0" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#172033">2026-05-01</text>
+</svg>

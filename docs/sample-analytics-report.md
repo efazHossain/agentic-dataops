@@ -4,6 +4,16 @@ This report shows example warehouse outputs after running the local demo and fre
 
 Report generated from local Postgres warehouse on 2026-05-01.
 
+## Generated Charts
+
+![Event funnel](assets/event-funnel.svg)
+
+![Revenue by device](assets/revenue-by-device.svg)
+
+![Daily event volume](assets/daily-event-volume.svg)
+
+![Latest agent status](assets/agent-status.svg)
+
 ## Executive Summary
 
 | Metric | Value |

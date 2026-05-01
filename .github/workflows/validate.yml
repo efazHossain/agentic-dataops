@@ -24,7 +24,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Validate Docker Compose config
-        run: docker compose --profile tools config >/dev/null
+        run: docker compose --profile tools --profile dashboard config >/dev/null
 
       - name: Parse dbt project
         run: dbt parse --project-dir services/dbt --profiles-dir services/dbt
@@ -35,4 +35,6 @@ jobs:
             services/agent/src/agent_run.py \
             services/loader/src/load_events.py \
             services/generator/src/generate_events.py \
-            services/generator/src/write_to_minio.py
+            services/generator/src/write_to_minio.py \
+            scripts/generate_report.py \
+            services/dashboard/app.py

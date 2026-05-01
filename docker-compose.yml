@@ -119,6 +119,22 @@ services:
     profiles:
       - tools
 
+  dashboard:
+    build:
+      context: ./services/dashboard
+    container_name: adops-dashboard
+    env_file: .env
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+    ports:
+      - "${DASHBOARD_PORT:-8501}:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - dashboard
+
 volumes:
   pgdata:
   miniodata:
