@@ -167,6 +167,7 @@ make load        # Load the latest generated partition into raw.raw_events
 make dbt-run     # Run dbt transformations
 make dbt-test    # Run dbt tests
 make agent       # Run freshness remediation agent
+make test        # Run Python unit tests
 make psql        # Open psql in the Postgres container
 make buckets     # List MinIO buckets
 make reset       # Stop services and remove Docker volumes

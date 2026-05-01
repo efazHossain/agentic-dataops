@@ -10,3 +10,6 @@ python-dateutil==2.9.0.post0
 # Quality-of-life (optional but useful)
 python-dotenv>=1.0
 rich>=13.7
+
+# Testing
+pytest==8.3.4

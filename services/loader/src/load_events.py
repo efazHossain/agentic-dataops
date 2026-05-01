@@ -8,6 +8,19 @@ import psycopg2
 from psycopg2.extras import execute_values
 from botocore.config import Config
 
+EVENT_COLUMNS = (
+    "event_id",
+    "user_id",
+    "event_type",
+    "event_ts",
+    "device_type",
+    "price",
+    "currency",
+    "source_version",
+    "geo_country",
+    "campaign_id",
+)
+
 def s3_client():
     endpoint = os.getenv("S3_ENDPOINT", "http://minio:9000")
     access_key = os.getenv("MINIO_ROOT_USER")
@@ -31,6 +44,17 @@ def pg_conn():
     pw = os.getenv("POSTGRES_PASSWORD", "agentic_pw")
     return psycopg2.connect(host=host, port=port, dbname=db, user=user, password=pw)
 
+def event_to_row(event: dict) -> tuple:
+    return tuple(event.get(column) for column in EVENT_COLUMNS)
+
+def parse_jsonl_lines(lines: list[str]) -> list[tuple]:
+    rows = []
+    for line in lines:
+        if not line.strip():
+            continue
+        rows.append(event_to_row(json.loads(line)))
+    return rows
+
 def main():
     bucket = os.getenv("LOAD_BUCKET", "lake-raw")
     key = os.getenv("LOAD_KEY")
@@ -41,24 +65,7 @@ def main():
     s3 = s3_client()
     obj = s3.get_object(Bucket=bucket, Key=key)
     data = obj["Body"].read().decode("utf-8").splitlines()
-
-    rows = []
-    for line in data:
-        if not line.strip():
-            continue
-        e = json.loads(line)
-        rows.append((
-            e.get("event_id"),
-            e.get("user_id"),
-            e.get("event_type"),
-            e.get("event_ts"),
-            e.get("device_type"),
-            e.get("price"),
-            e.get("currency"),
-            e.get("source_version"),
-            e.get("geo_country"),
-            e.get("campaign_id"),
-        ))
+    rows = parse_jsonl_lines(data)
 
     if not rows:
         print("No rows found in object.")

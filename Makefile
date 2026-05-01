@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+PYTHON ?= $(shell if [ -x .venv/bin/python ]; then echo .venv/bin/python; else echo python3; fi)
 .DEFAULT_GOAL := help
 
 help:
@@ -19,6 +20,7 @@ help:
 	@echo "  make dashboard - Start the Streamlit dashboard"
 	@echo "  make dbt-docs-generate - Generate dbt documentation"
 	@echo "  make dbt-docs-serve - Serve dbt documentation on localhost:8085"
+	@echo "  make test     - Run Python unit tests"
 	@echo "  make demo     - Run the local demo path"
 	@echo "  make validate - Validate compose and dbt project configuration"
 	@echo "  make reset    - Remove volumes and start fresh"
@@ -65,7 +67,7 @@ agent:
 	docker compose --profile tools run --rm agent
 
 report:
-	python3 scripts/generate_report.py
+	$(PYTHON) scripts/generate_report.py
 
 dashboard:
 	docker compose --profile dashboard up --build dashboard
@@ -75,6 +77,9 @@ dbt-docs-generate:
 
 dbt-docs-serve:
 	docker compose --profile tools run --rm -p 8085:8085 dbt dbt docs serve --host 0.0.0.0 --port 8085
+
+test:
+	$(PYTHON) -m pytest tests
 
 demo: up generate load dbt-run dbt-test
 	@echo "Demo complete. Run 'make agent' to exercise freshness remediation."

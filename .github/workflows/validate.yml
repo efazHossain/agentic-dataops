@@ -38,3 +38,6 @@ jobs:
             services/generator/src/write_to_minio.py \
             scripts/generate_report.py \
             services/dashboard/app.py
+
+      - name: Run unit tests
+        run: pytest tests
