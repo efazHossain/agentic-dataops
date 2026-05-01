@@ -74,6 +74,8 @@ services/
   agent/                Freshness detection and remediation workflow
 data/sample/            Notes for sample data usage
 docs/demo-proof.md      Verified remediation run output
+docs/sample-analytics-report.md
+                        Example warehouse metrics and SQL
 docker-compose.yml      Local infrastructure and tool services
 Makefile                Developer workflow shortcuts
 ```
@@ -105,6 +107,10 @@ The agent runs `dbt source freshness`. If the source is stale, it generates a ne
 ### Demo Proof
 
 A verified agent run is captured in [docs/demo-proof.md](docs/demo-proof.md). In that run, the agent detected stale freshness, generated and loaded `5000` events, rebuilt dbt models, passed all `8` dbt tests, and confirmed freshness passed afterward.
+
+### Sample Analytics Output
+
+Example warehouse metrics are captured in [docs/sample-analytics-report.md](docs/sample-analytics-report.md), including total events loaded, purchase revenue, device performance, latest mart rows, and the SQL used to produce the report.
 
 ### 4. Validate Configuration
 
