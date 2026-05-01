@@ -1,8 +1,22 @@
 # Agentic DataOps Platform
 
+[![Validate](https://github.com/efazHossain/agentic-dataops/actions/workflows/validate.yml/badge.svg)](https://github.com/efazHossain/agentic-dataops/actions/workflows/validate.yml)
+
 Local-first data platform that simulates a production analytics pipeline with object storage, a warehouse, dbt transformations, data freshness checks, and an automated remediation agent.
 
 This project is designed as a portfolio-grade data engineering demo: it shows how raw event data moves through lake storage, ingestion, transformation, validation, and operational telemetry using Docker Compose.
+
+## Portfolio Summary
+
+Built a local DataOps platform that detects stale data, remediates the pipeline, rebuilds dbt models, validates data quality, logs telemetry, and serves analytics outputs through generated reports and a Streamlit dashboard.
+
+## Screenshots
+
+![Dashboard preview](docs/assets/dashboard-preview.png)
+
+The dashboard summarizes warehouse volume, unique users, purchase revenue, agent health, event funnel, and revenue by device. The generated analytics report also includes reusable chart assets:
+
+![Daily event volume](docs/assets/daily-event-volume.svg)
 
 ## What This Demonstrates
 
